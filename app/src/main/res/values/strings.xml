@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Reels Counter</string>
+    <string name="service_description">Detects when Instagram Reels is on screen so reels can be counted. Data stays on this device.</string>
 </resources>
