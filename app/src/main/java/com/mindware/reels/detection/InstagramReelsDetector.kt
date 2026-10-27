@@ -17,6 +17,8 @@ class InstagramReelsDetector(private val config: InstagramConfig = InstagramConf
         val descMatched: Boolean,
         val pagerFound: Boolean,
         val nodesVisited: Int,
+        /** A main bottom-bar tab is on screen, so the root is a main screen, not a sheet or full-screen overlay. */
+        val tabBarVisible: Boolean = false,
     )
 
     data class Result(val signals: Signals, val diagnostics: Diagnostics)
@@ -30,6 +32,7 @@ class InstagramReelsDetector(private val config: InstagramConfig = InstagramConf
         var itemId: String? = null
         var descHash: String? = null
         var pagerFound = false
+        var tabBarVisible = false
         var pagerSelectedKey: String? = null
         var visited = 0
 
@@ -40,6 +43,7 @@ class InstagramReelsDetector(private val config: InstagramConfig = InstagramConf
             if (id != null) {
                 // Instagram keeps the Reels pager in the tree, hidden and zero-width, while on other tabs.
                 if (viewerId == null && node.isOnScreen() && config.reelsViewerIdHints.any { id.contains(it) }) viewerId = id
+                if (!tabBarVisible && node.isOnScreen() && config.mainTabIdHints.any { id == it }) tabBarVisible = true
                 if (itemId == null && node.isVisibleToUser && config.reelItemIdHints.any { id.contains(it) }) {
                     itemId = id
                     val b = Rect().also { node.getBoundsInScreen(it) }
@@ -69,7 +73,7 @@ class InstagramReelsDetector(private val config: InstagramConfig = InstagramConf
         val reelId = if (reelsVisible) descHash ?: pagerSelectedKey else null
         return Result(
             Signals(now, true, reelsVisible, reelId),
-            Diagnostics(viewerId, itemId, descMatched, pagerFound, visited),
+            Diagnostics(viewerId, itemId, descMatched, pagerFound, visited, tabBarVisible),
         )
     }
 }

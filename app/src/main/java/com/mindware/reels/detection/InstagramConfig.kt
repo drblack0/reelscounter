@@ -6,6 +6,8 @@ package com.mindware.reels.detection
  */
 data class InstagramConfig(
     val packageName: String = "com.instagram.android",
+    /** Bottom-bar tab ids (seen in device dumps). Present on main screens, absent under sheets like comments. */
+    val mainTabIdHints: List<String> = listOf("feed_tab", "clips_tab", "search_tab", "profile_tab"),
     /** UNVERIFIED: view-id substrings (after the "id/") that suggest the Reels viewer. */
     val reelsViewerIdHints: List<String> = listOf("clips_viewer", "clips_swipe_refresh", "reel_viewer"),
     /** UNVERIFIED: view-id substrings of the element holding one reel's content/description. */

@@ -36,6 +36,7 @@ class ReelsAccessibilityService : AccessibilityService() {
     private var lastSummary: String? = null
     private val handler = Handler(Looper.getMainLooper())
     private var pendingType = 0
+    private var holdSince = 0L
     private val trailing = Runnable { process(pendingType) }
 
     private val signals = Channel<Signals>(Channel.UNLIMITED)
@@ -110,12 +111,12 @@ class ReelsAccessibilityService : AccessibilityService() {
         val root = rootInActiveWindow ?: return
         root.use { r ->
             val res = detector.detect(r, System.currentTimeMillis())
-            signals.trySend(res.signals)
+            signals.trySend(withSheetHold(res))
             if (!DebugLog.enabled.value) return
             val d = res.diagnostics
             val s = res.signals
             val summary = "reels=${s.reelsVisible} id=${s.reelId} viewer=${d.viewerIdMatch} item=${d.itemIdMatch} " +
-                "desc=${d.descMatched} pager=${d.pagerFound} nodes=${d.nodesVisited}"
+                "desc=${d.descMatched} pager=${d.pagerFound} tabs=${d.tabBarVisible} nodes=${d.nodesVisited}"
             // Only log when something changed, to keep the log readable.
             if (summary != lastSummary) {
                 lastSummary = summary
@@ -123,6 +124,22 @@ class ReelsAccessibilityService : AccessibilityService() {
                 if (DebugLog.dumpTree.value) DebugLog.add("TREE\n" + NodeDump.dump(r))
             }
         }
+    }
+
+    /**
+     * Opening comments (or any sheet) makes Instagram's active window lack both the Reels viewer and the
+     * bottom bar. That is "unknown", not "left Reels": keep the running session alive for a while. A real
+     * exit to Home/another tab shows the bar and still ends the session immediately.
+     */
+    private fun withSheetHold(res: InstagramReelsDetector.Result): Signals {
+        val s = res.signals
+        val unknown = s.instagramForeground && !s.reelsVisible && !res.diagnostics.tabBarVisible
+        if (!unknown || !(application as ReelsApp).container.live.value.active) {
+            holdSince = 0
+            return s
+        }
+        if (holdSince == 0L) holdSince = s.ts
+        return if (s.ts - holdSince < SHEET_HOLD_MS) Signals(s.ts, true, true, null) else s
     }
 
     /** System UI, our own overlay and the keyboard open windows without leaving Instagram. */
@@ -143,5 +160,6 @@ class ReelsAccessibilityService : AccessibilityService() {
     private companion object {
         const val THROTTLE_MS = 120L
         const val TICK_MS = 1_000L
+        const val SHEET_HOLD_MS = 120_000L
     }
 }

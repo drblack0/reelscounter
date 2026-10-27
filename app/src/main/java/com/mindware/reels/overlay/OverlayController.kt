@@ -2,8 +2,10 @@ package com.mindware.reels.overlay
 
 import android.accessibilityservice.AccessibilityService
 import android.graphics.PixelFormat
+import android.os.Build
 import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.TextView
 import com.mindware.reels.R
@@ -29,17 +31,24 @@ class OverlayController(private val service: AccessibilityService) {
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+            // LAYOUT_IN_SCREEN makes y count from the very top of the screen, not from below the status bar.
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            y = statusBarHeight() + (4 * service.resources.displayMetrics.density).toInt()
+            y = topInset() + (2 * service.resources.displayMetrics.density).toInt()
         }
         windowManager.addView(view, params)
         return view
     }
 
-    private fun statusBarHeight(): Int {
+    /** Bottom edge of the status bar / camera cutout, so the pill sits just below the notch. */
+    private fun topInset(): Int {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val types = WindowInsets.Type.statusBars() or WindowInsets.Type.displayCutout()
+            return windowManager.currentWindowMetrics.windowInsets.getInsetsIgnoringVisibility(types).top
+        }
         val id = service.resources.getIdentifier("status_bar_height", "dimen", "android")
         return if (id > 0) service.resources.getDimensionPixelSize(id) else 0
     }
