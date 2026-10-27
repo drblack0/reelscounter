@@ -134,5 +134,3 @@ bottom tab bar was visible (`tabs=`).
 - Verified by hand on one phone and one Instagram version. Detection can't be tested without a device.
 - Phone makers may stop the service or switch it off after an update; the Today screen warns when it is off.
 - Accessibility apps that read other apps face strict Play Store review; this project is not aimed at the store.
-
-`PLAN.md` holds the original plan and milestones (M0 to M6, all done).
