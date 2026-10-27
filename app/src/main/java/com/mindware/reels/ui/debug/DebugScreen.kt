@@ -13,10 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mindware.reels.data.db.RangeTotals
 import com.mindware.reels.detection.DebugLog
 
 @Composable
-fun DebugScreen() {
+fun DebugScreen(totals: RangeTotals? = null) {
     val ctx = LocalContext.current
     val enabled by DebugLog.enabled.collectAsState()
     val dumpTree by DebugLog.dumpTree.collectAsState()
@@ -27,6 +28,13 @@ fun DebugScreen() {
             Surface(color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.fillMaxWidth()) {
                 Text("Debug mode ON: structure-only logging", Modifier.padding(8.dp))
             }
+        }
+        if (totals != null) {
+            Text(
+                "Today: ${totals.reelCount} reels, ${totals.sessionCount} sessions, ${totals.totalMs / 1000}s",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
         }
         Button(onClick = { ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }) {
             Text("Open accessibility settings")

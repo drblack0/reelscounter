@@ -50,6 +50,9 @@ class SessionTracker(private val config: SessionConfig = SessionConfig()) {
         private set
     val isActive: Boolean get() = active && opened
 
+    /** True while the 1s threshold or idle timeout can still fire without any new event. */
+    val needsTick: Boolean get() = active
+
     fun onSignals(signals: Signals): List<SessionAction> {
         val out = mutableListOf<SessionAction>()
         val ts = if (active) maxOf(signals.ts, lastActivity) else signals.ts
