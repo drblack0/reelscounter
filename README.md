@@ -1,10 +1,27 @@
-# Reels Counter
+<p align="center"><img src="docs/icon.svg" alt="Reels Counter icon" width="96"></p>
+
+<h1 align="center">Reels Counter</h1>
 
 An Android app that counts the Instagram Reels you watch and how long you spend on them. Everything stays on
 the phone: the app has no internet permission and no account.
 
 > Sideload/personal build. It relies on Instagram's internal view IDs, which Instagram can change at any time
 > (see [When Instagram changes](#when-instagram-changes)).
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/today.png" width="200" alt="Today screen"><br><sub>Today</sub></td>
+    <td align="center"><img src="docs/screenshots/history.png" width="200" alt="History screen"><br><sub>History</sub></td>
+    <td align="center"><img src="docs/screenshots/settings.png" width="200" alt="Settings screen"><br><sub>Settings</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/overlay-1.png" width="200" alt="Overlay pill on a reel"><br><sub>Overlay while watching</sub></td>
+    <td align="center"><img src="docs/screenshots/overlay-2.png" width="200" alt="Overlay pill on another reel"><br><sub>Overlay on the next reel</sub></td>
+    <td></td>
+  </tr>
+</table>
 
 ## Features
 
