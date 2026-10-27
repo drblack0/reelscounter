@@ -59,6 +59,10 @@ class ReelsRepository(
         }
     }
 
+    fun observeSessions(from: Long, to: Long): Flow<List<ReelSessionEntity>> = dao.observeSessions(from, to)
+
+    fun observeViewTimestamps(from: Long, to: Long): Flow<List<Long>> = dao.observeViewTimestamps(from, to)
+
     fun observeTotals(from: Long, to: Long, now: Long): Flow<RangeTotals> = dao.observeTotals(from, to, now)
 
     companion object {
