@@ -33,6 +33,9 @@ sealed interface SessionAction {
  * Pure session rules: no Android, no clock. Feed it [onSignals] for detector events and [tick] on a
  * timer (needed because idle timeout and the 1s threshold fire when no events arrive).
  */
+/** What the overlay shows. [active] is false whenever no Reels session is running. */
+data class LiveState(val active: Boolean = false, val reelCount: Int = 0, val startedAt: Long = 0)
+
 class SessionTracker(private val config: SessionConfig = SessionConfig()) {
     // PENDING: on screen, not yet long enough. COUNTED: counted. IGNORED: already accounted for in an
     // earlier (idle-ended) session, so the same reel still on screen is not counted twice.
@@ -49,6 +52,9 @@ class SessionTracker(private val config: SessionConfig = SessionConfig()) {
     var reelCount = 0
         private set
     val isActive: Boolean get() = active && opened
+
+    /** When the current session's Reels viewing began (valid while [needsTick]). */
+    val startedAt: Long get() = sessionStart
 
     /** True while the 1s threshold or idle timeout can still fire without any new event. */
     val needsTick: Boolean get() = active

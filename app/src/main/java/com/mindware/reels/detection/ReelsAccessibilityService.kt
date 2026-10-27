@@ -5,7 +5,11 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
+import android.view.inputmethod.InputMethodManager
 import com.mindware.reels.ReelsApp
+import com.mindware.reels.overlay.OverlayController
+import com.mindware.reels.overlay.formatPill
+import com.mindware.reels.session.LiveState
 import com.mindware.reels.session.SessionTracker
 import com.mindware.reels.session.Signals
 import kotlinx.coroutines.CoroutineScope
@@ -14,6 +18,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.onTimeout
 import kotlinx.coroutines.selects.select
@@ -35,8 +41,27 @@ class ReelsAccessibilityService : AccessibilityService() {
     private val signals = Channel<Signals>(Channel.UNLIMITED)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
 
+    private val mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var overlay: OverlayController? = null
+
     override fun onServiceConnected() {
-        val repository = (application as ReelsApp).container.repository
+        val container = (application as ReelsApp).container
+        val repository = container.repository
+        val live = container.live
+        val pill = OverlayController(this).also { overlay = it }
+        mainScope.launch {
+            live.collectLatest { state ->
+                if (!state.active) {
+                    pill.hide()
+                } else {
+                    // Re-render every second so the timer advances between reel changes.
+                    while (true) {
+                        pill.show(formatPill(state.reelCount, System.currentTimeMillis() - state.startedAt))
+                        delay(1_000)
+                    }
+                }
+            }
+        }
         scope.launch {
             repository.recoverDangling(System.currentTimeMillis())
             val tracker = SessionTracker()
@@ -54,12 +79,20 @@ class ReelsAccessibilityService : AccessibilityService() {
                 val actions = if (next != null) tracker.onSignals(next) else tracker.tick(now)
                 repository.apply(actions)
                 if (tracker.needsTick) repository.noteActivity(now)
+                live.value = LiveState(tracker.needsTick, tracker.reelCount, tracker.startedAt)
             }
         }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        if (event.packageName?.toString() != config.packageName) return
+        val pkg = event.packageName?.toString() ?: return
+        if (pkg != config.packageName) {
+            // Instagram gets no events once we leave it, so a foreground switch is our only end signal.
+            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && !isTransientWindow(pkg)) {
+                signals.trySend(Signals(System.currentTimeMillis(), false, false, null))
+            }
+            return
+        }
         val now = SystemClock.elapsedRealtime()
         // Throttle, but always run once more after the burst settles: a dropped last event would
         // otherwise leave us looking at a mid-transition tree (e.g. a pager still sliding).
@@ -92,11 +125,18 @@ class ReelsAccessibilityService : AccessibilityService() {
         }
     }
 
+    /** System UI, our own overlay and the keyboard open windows without leaving Instagram. */
+    private fun isTransientWindow(pkg: String): Boolean =
+        pkg == packageName || pkg == "com.android.systemui" ||
+            getSystemService(InputMethodManager::class.java).enabledInputMethodList.any { it.packageName == pkg }
+
     override fun onInterrupt() = Unit
 
     override fun onDestroy() {
         handler.removeCallbacks(trailing)
         scope.cancel()
+        mainScope.cancel()
+        overlay?.hide()
         super.onDestroy()
     }
 
