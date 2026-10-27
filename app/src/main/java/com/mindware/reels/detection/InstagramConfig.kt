@@ -18,6 +18,11 @@ data class InstagramConfig(
         "androidx.recyclerview.widget.RecyclerView",
         "androidx.viewpager.widget.ViewPager",
     ),
+    /**
+     * Fallback that treats a tall scrollable pager plus a "Reel" description as the Reels viewer. Off: it
+     * fires on Home-feed posts that are reels. Only enable if the viewer id hints stop matching.
+     */
+    val structuralFallback: Boolean = false,
     /** Max tree depth walked, to bound work per event. */
     val maxDepth: Int = 30,
     val maxNodes: Int = 600,

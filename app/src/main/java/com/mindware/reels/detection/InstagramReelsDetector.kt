@@ -65,7 +65,7 @@ class InstagramReelsDetector(private val config: InstagramConfig = InstagramConf
         walk(root, 0)
 
         val descMatched = descHash != null
-        val reelsVisible = viewerId != null || (pagerFound && descMatched)
+        val reelsVisible = viewerId != null || (config.structuralFallback && pagerFound && descMatched)
         val reelId = if (reelsVisible) descHash ?: pagerSelectedKey else null
         return Result(
             Signals(now, true, reelsVisible, reelId),
