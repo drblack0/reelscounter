@@ -38,7 +38,8 @@ class InstagramReelsDetector(private val config: InstagramConfig = InstagramConf
             visited++
             val id = node.viewIdResourceName?.substringAfter(":id/")
             if (id != null) {
-                if (viewerId == null && config.reelsViewerIdHints.any { id.contains(it) }) viewerId = id
+                // Instagram keeps the Reels pager in the tree, hidden and zero-width, while on other tabs.
+                if (viewerId == null && node.isOnScreen() && config.reelsViewerIdHints.any { id.contains(it) }) viewerId = id
                 if (itemId == null && node.isVisibleToUser && config.reelItemIdHints.any { id.contains(it) }) {
                     itemId = id
                     val b = Rect().also { node.getBoundsInScreen(it) }
@@ -54,7 +55,7 @@ class InstagramReelsDetector(private val config: InstagramConfig = InstagramConf
             if (!pagerFound && node.className?.toString() in config.pagerClassNames && node.isScrollable) {
                 val b = Rect().also { node.getBoundsInScreen(it) }
                 // Structural fallback: a tall, near-full-screen scrollable container.
-                if (b.height() >= screen.height() * 0.8) pagerFound = true
+                if (node.isVisibleToUser && b.width() > 0 && b.height() >= screen.height() * 0.8) pagerFound = true
             }
             for (i in 0 until node.childCount) {
                 val child = node.getChild(i) ?: continue
@@ -71,4 +72,9 @@ class InstagramReelsDetector(private val config: InstagramConfig = InstagramConf
             Diagnostics(viewerId, itemId, descMatched, pagerFound, visited),
         )
     }
+}
+
+private fun AccessibilityNodeInfo.isOnScreen(): Boolean {
+    val b = Rect().also { getBoundsInScreen(it) }
+    return isVisibleToUser && b.width() > 0 && b.height() > 0
 }
