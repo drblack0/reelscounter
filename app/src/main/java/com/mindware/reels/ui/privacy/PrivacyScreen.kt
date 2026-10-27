@@ -27,7 +27,8 @@ fun PrivacyScreen(modifier: Modifier = Modifier) {
         )
         Section(
             "What it keeps",
-            "Descriptions are turned into a short one-way hash and the text is discarded. No usernames, captions, " +
+            "Descriptions are reduced to a short fingerprint that exists only in memory while a reel is on screen; " +
+                "the text is discarded and the fingerprint is never saved. No usernames, captions, " +
                 "comments or messages are stored or logged. The database holds only start times, reel timestamps and durations.",
         )
         Section(
@@ -42,7 +43,8 @@ fun PrivacyScreen(modifier: Modifier = Modifier) {
         Section(
             "Debug mode",
             "When on, a banner is shown. Logs contain only structure (IDs, classes, positions) and never on-screen text. " +
-                "They stay in the phone's log and are cleared when the app closes.",
+                "Lines are kept in memory (cleared when the app closes) and also written to the phone's system log, " +
+                "where they remain until Android rotates them. They show reel fingerprints but never on-screen text.",
         )
         Section("Deleting data", "Settings → Delete all data removes every session. Uninstalling the app removes everything.")
     }
