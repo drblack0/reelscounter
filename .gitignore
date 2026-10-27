@@ -7,3 +7,13 @@
 .kotlin/
 *.apk
 .DS_Store
+
+# Claude Code
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+SUMMARY.md
+
+# Device captures: uiautomator dumps and logs contain on-screen text (usernames, captions)
+/*.xml
+/reels*.txt
