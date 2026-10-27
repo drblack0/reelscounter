@@ -7,11 +7,10 @@ import com.mindware.reels.data.db.ReelViewEntity
 import com.mindware.reels.session.SessionAction
 import com.mindware.reels.session.SessionConfig
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
-/**
- * Persists [SessionAction]s. Not thread-safe: call from one coroutine at a time (the service's single
- * consumer loop does).
- */
+/** Persists [SessionAction]s. Writes are serialised by a lock so "delete all data" can run from the UI. */
 class ReelsRepository(
     private val dao: ReelDao,
     private val heartbeat: HeartbeatStore,
@@ -21,8 +20,9 @@ class ReelsRepository(
     private var viewId: Long? = null
     private var viewTs = 0L
     private var lastHeartbeatWrite = 0L
+    private val lock = Mutex()
 
-    suspend fun apply(actions: List<SessionAction>) {
+    suspend fun apply(actions: List<SessionAction>) = lock.withLock {
         for (action in actions) when (action) {
             is SessionAction.SessionStarted -> {
                 sessionId = dao.insertSession(ReelSessionEntity(startTs = action.startTs, endTs = null, reelCount = 0))
@@ -52,11 +52,18 @@ class ReelsRepository(
     }
 
     /** Closes sessions left open by a crash/kill. Call once when the service starts. */
-    suspend fun recoverDangling(now: Long) {
+    suspend fun recoverDangling(now: Long) = lock.withLock {
         val beat = heartbeat.read()
         for (s in dao.openSessions()) {
             dao.closeSession(s.id, recoveredEnd(s.startTs, beat, dao.lastViewEnd(s.id), now, config.idleTimeoutMs))
         }
+    }
+
+    /** Wipes all history. Forgets the open session so later actions for it are dropped, not orphaned. */
+    suspend fun deleteAll() = lock.withLock {
+        dao.deleteAll()
+        sessionId = null
+        viewId = null
     }
 
     fun observeSessions(from: Long, to: Long): Flow<List<ReelSessionEntity>> = dao.observeSessions(from, to)

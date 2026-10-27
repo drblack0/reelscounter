@@ -20,6 +20,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.onTimeout
 import kotlinx.coroutines.selects.select
@@ -49,9 +50,10 @@ class ReelsAccessibilityService : AccessibilityService() {
         val container = (application as ReelsApp).container
         val repository = container.repository
         val live = container.live
+        val settings = container.settings
         val pill = OverlayController(this).also { overlay = it }
         mainScope.launch {
-            live.collectLatest { state ->
+            combine(live, settings.state) { l, s -> if (s.overlayEnabled) l else LiveState() }.collectLatest { state ->
                 if (!state.active) {
                     pill.hide()
                 } else {
@@ -65,7 +67,8 @@ class ReelsAccessibilityService : AccessibilityService() {
         }
         scope.launch {
             repository.recoverDangling(System.currentTimeMillis())
-            val tracker = SessionTracker()
+            val tracker = SessionTracker(settings.state.value.sessionConfig())
+            launch { settings.state.collect { tracker.config = it.sessionConfig() } }
             while (true) {
                 // Wake for a tick only while the 1s threshold / idle timeout can still fire.
                 val next: Signals? = if (tracker.needsTick) {

@@ -36,7 +36,7 @@ sealed interface SessionAction {
 /** What the overlay shows. [active] is false whenever no Reels session is running. */
 data class LiveState(val active: Boolean = false, val reelCount: Int = 0, val startedAt: Long = 0)
 
-class SessionTracker(private val config: SessionConfig = SessionConfig()) {
+class SessionTracker(var config: SessionConfig = SessionConfig()) {
     // PENDING: on screen, not yet long enough. COUNTED: counted. IGNORED: already accounted for in an
     // earlier (idle-ended) session, so the same reel still on screen is not counted twice.
     private enum class ReelState { PENDING, COUNTED, IGNORED }

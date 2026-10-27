@@ -23,11 +23,6 @@ fun DebugScreen(modifier: Modifier = Modifier) {
     val lines by DebugLog.lines.collectAsState()
 
     Column(modifier.fillMaxSize().padding(12.dp)) {
-        if (enabled) {
-            Surface(color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.fillMaxWidth()) {
-                Text("Debug mode ON: structure-only logging", Modifier.padding(8.dp))
-            }
-        }
         Button(onClick = { ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }) {
             Text("Open accessibility settings")
         }

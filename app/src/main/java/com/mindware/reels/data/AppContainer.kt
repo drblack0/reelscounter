@@ -10,5 +10,6 @@ class AppContainer(context: Context) {
     val database: AppDatabase by lazy { AppDatabase.create(appContext) }
     /** Published by the service, read by the overlay. */
     val live = MutableStateFlow(LiveState())
+    val settings: SettingsStore by lazy { SettingsStore(appContext) }
     val repository: ReelsRepository by lazy { ReelsRepository(database.reelDao(), PrefsHeartbeatStore(appContext)) }
 }
